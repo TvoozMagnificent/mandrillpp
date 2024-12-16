@@ -111,6 +111,7 @@ class Var:
             try:
                 while not Var.text: Var.text = input()
             except: return 0
+            num = ord(Var.text[0])
             Var.text = Var.text[1:]
             return num
         return env[self._] if self._ in env else 0
