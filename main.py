@@ -97,7 +97,9 @@ class Var:
     def __repr__(self): return f'Var({self._})'
     def evaluate(self, env):
         if self._ == 'read':
-            if not Var.text: Var.text = input()
+            try:
+                while not Var.text: Var.text = input()
+            except: return 0
             assert Var.text[0] in '-1234567890'
             k = 1
             while k < len(Var.text) and Var.text[k] in '1234567890': k += 1
@@ -106,8 +108,9 @@ class Var:
             if Var.text and Var.text[0] == ' ': Var.text = Var.text[1:]
             return num
         if self._ == 'get':
-            if not Var.text: Var.text = input()
-            num = ord(Var.text[0])
+            try:
+                while not Var.text: Var.text = input()
+            except: return 0
             Var.text = Var.text[1:]
             return num
         return env[self._] if self._ in env else 0
