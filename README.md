@@ -19,11 +19,15 @@ will execute `program.man` as a _mandrill++_ file.
 The changes in _mandrill++_ as compared to _mandrill_ are:
 - Allowing the use of underscores is variable names.
 - Adding syntactic sugar like `+=` and `++` that makes writing programs less painful.
-- Adding the unary `-` operator, boolean operators, and the ternary operator.
+- Adding the boolean operators and the ternary operator.
 - Depreciating ambiguous grammar associated with chained comparison operators.
 - Allowing some syntactic simplifications in `if` and `while` constructs.
 - Adding array references.
 - Adding procedures. 
+
+### Comments
+
+Comments are deliminated by `\` signs. 
 
 ### Variables
 
@@ -84,8 +88,8 @@ The basic binary arithmetic operators are:
 - `/` for integer division,
 - `%` for integer modulo.
 
-The unary `-` operator is also supported. The implementations of these operators use the inbuilt Python operators
-`+`, `-`, `*`, `//` (not `/`), `%`, and `-`. Notably, the exponentiation operator `**` and the bitwise operators are not supported. 
+The implementations of these operators use the inbuilt Python operators `+`, `-`, `*`, `//` (not `/`), and `%`. 
+Notably, the unary operators `+` and `-`, the exponentiation operator `**`, and the bitwise operators are not supported. 
 The order of operations are standard. 
 
 The comparison operators are `<`, `>`, `<=`, `>=`, `==`, `!=`, implemented using inbuilt Python operators. These operators
@@ -192,8 +196,100 @@ Of course, it should go without saying that writing programs like this are not a
 
 ### Array References
 
+Something of the form `var @num`, `var @var`, or `var @(expr)` constitutes an array reference. Those references treat `var` as an array,
+and denotes item `num`, `var`, or `expr` of that array. We support negative indices like any other normal indices. 
+Arrays have infinite length. Internally, `var @3` is represented by the variable `var.3`. These variable aliases are generated on the fly. 
 
+We also support multi-dimensional array references. For instance, if we have `a = 1; b = 2; `, then `x @a @3 @b @(a+b)` would reference
+the variable `x.1.3.2.3`. `read`, `write`, `get`, and `put` can be used as array references. 
 
-`read`, `write`, `get`, and `put` can be used as array references. 
+Variable names, if needed, are calculated after the expression on the right is evaluated. For instance, when executing
 
+```
+read @read @read = read @read;
+```
+
+where the input stream is `1 2 3 4 5`, 
+
+```
+read @2 @3 = read @1; 
+```
+
+is executed. Another example is that `a @read ++; ` will execute `a @2 = a @1 + 1; ` if the input stream is `1 2 3 4 5`. 
+
+## Stylelines and Conventions
+
+### Indentations
+
+Indentations should be placed as expected, and is most preferrably two spaces. For instance:
+
+```
+\ some fantastic demo class \
+DEMO : {
+  \ does something completely weird \
+  if ( number < 3 ) {
+    number++; \ because harry potter is great \
+    if ( other < 2 ) other = number; 
+    else if ( other < 3 )
+      \ do some number sorcery \
+      other = number + other + other * number + 123 + heap @index; \ hooray \
+    other++; \ because voldemort is great as well \
+  }
+}
+```
+
+### Spacing
+
+The author prefers spacing around both parentheses and braces - see the code segment above. 
+
+When there is only one order of operation, add spaces around both sides like `a + b`, with the only exception being `i++; `. 
+It is acceptible to write both `a + b * c + d` and `a + b*c + d`, but not `a+b*c+d` or, even worse, `a+b * c+d`. 
+
+It is customary to add a space before `++` or `--` if what precedes it is a reference and not a variable, like `array @index ++; `. 
+
+We usually add spaces before reference symbols, but never after them.  
+
+### Comments
+
+Comments can serve three purposes: 
+1. for documentation, 
+2. for commenting, and
+3. for commenting out code. 
+
+When documenting code, a block comment should be used as such: 
+
+```
+MAIN : {
+  \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+  heap @i - heap storing all the elements
+  end - index of the end of `heap`
+  string @i - input string
+  \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+  ...
+}
+```
+
+Notice how the number of backslashes in both lines are odd. 
+
+When commenting, we simply use `/ comment yada yada /`, putting spaces on both sides. 
+These comments can come after a line, explaining what the line does, or can come before a line,
+explaining what the following lines (not line) do. 
+
+Usually, we use lowercase letters for convenience unless necessary. (But we also don't obfuscate purely to avoid uppercase letters.) 
+
+When commenting out code, it is customary to indent the commented code: 
+
+```
+i++;
+\
+  j++;
+  k++;
+\
+```
+
+However, this is not an obligation, especially if it is inconvenient to indent code. 
+
+### Variable Names
+
+Variable names should usually be words ...
 
