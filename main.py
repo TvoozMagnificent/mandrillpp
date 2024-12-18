@@ -120,13 +120,14 @@ class Parser:
     def __init__(self, tokens): self.tokens = tokens; self.current = 0; self.pr = {}
     def get(self): token = self.tokens[self.current]; self.current += 1; return token
     def peek(self): return self.tokens[self.current] if self.current < len(self.tokens) else Token('EOF', None)
+    def peeknext(self): return self.tokens[self.current+1] if self.current+1 < len(self.tokens) else Token('EOF', None)
     def consume(self, token): assert token == self.peek(); return self.get()
     def parse(self):
         while self.peek().type != 'EOF': self.parse_procedure()
         return self.pr
     def parse_procedure(self):
         name = self.peek();
-        if name.type == 'pr': self.get(); self.consume(Token(':')); self.pr[name.value] = self.parse_stmt()
+        if name.type == 'pr' and self.peeknext().type == ':': self.get(); self.consume(Token(':')); self.pr[name.value] = self.parse_stmt()
         else: self.pr['MAIN'] = self.parse_block()
     def parse_block(self):
         children = []
@@ -178,7 +179,7 @@ class Parser:
         return r
     def parse_md(self):
         r = self.parse_pref()
-        while self.peek().type in ['*', '/']: r = Expr(self.get().type, r, self.parse_pref())
+        while self.peek().type in ['*', '/', '%']: r = Expr(self.get().type, r, self.parse_pref())
         return r
     def parse_pref(self):
         if self.peek().type == 'nm': return Expr(self.get().value)
