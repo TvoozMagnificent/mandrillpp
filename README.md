@@ -502,6 +502,273 @@ MAIN : {
 
 This version only takes around 7 seconds to run, but it sacrifices readability. 
 
-### A (much) more complex problem. 
+### A More Complex Problem
+
+> Kailey starts with the number 0, and she has a fair coin with sides labeled 1 and 2. She
+> repeatedly flips the coin, and adds the result to her number. She stops when her number is a
+> positive perfect square. What is the expected value of Kailey’s number when she stops?
+
+The shortcoming of our programming language is obvious: we can't store decimals implicitly. 
+However, realize that the probability of landing on the number `N` is always an integer after we multiply it by `2^N`. 
+Therefore, we have our initial probability stored as, say, `2^10000`, and simulate 10000 iterations. 
+Here's our `MAIN` function. 
+
+```
+MAIN : {
+  INIT; \ initialize `probability @0` \
+  while (i < 10000) {
+    i++;
+    probability @i = (probability @(i-1) + probability @(i-2)) / 2;
+    CHECK_SQUARE;
+    if (return) {
+      sum += i * probability @i; 
+      probability @i = 0; 
+    }
+  }
+  write = sum * 100000000000000 / probability @0; put = 10; 
+}
+```
+
+The `INIT` procedure is straighforward enough: 
+
+```
+INIT : {
+  number = 1; \ for CHECK_SQUARE \
+  \ initialize `probability @0` \
+  probability @0 = 1;
+  while (count < 10000) {
+    probability @0 *= 2;
+    count++; 
+  }
+}
+```
+
+The `CHECK_SQUARE` procedure would be more painful if the numbers we check aren't in increasing order. 
+
+```
+CHECK_SQUARE : {
+  \ check whether the square root of i is number \
+  if (number * number == i) {
+    return = 1;
+    number++; 
+  } else return = 0; 
+}
+```
+
+The output is `359036568873322`, so our answer is `0.359036568873322`. This agrees with the answer given by the problem-setters. 
+
+In our implementation, we use array references to get the job done. Of course, it is possible to evade them - 
+that is left as an exercise to the reader. 
+
+### Conway's Game of Life
+
+To implement Conway's Game of Life, we introduce a new special variable: `random`. Evaluating `random` gives
+either 0 or 1 with 1/2 chance/  
+
+Our `MAIN` procedure is now mostly a sketch: 
+
+```
+MAIN : {
+  INITIALIZE; 
+  while (1) ADVANCE;
+}
+```
+
+Our `INITIALIZE` procedure will take in an integer from the user and use it as the dimensions of the grid. 
+
+```
+INITIALIZE : {
+  n = read;
+  x = 0;
+  while (x < n) {
+    y = 0;
+    while (y < n) {
+      grid @x @y = random; 
+      y++;
+    }
+    x++;
+  }
+}
+```
+
+Our `ADVANCE` procedure will have 4 steps: 
+
+```
+ADVANCE : {
+  COUNT_ALL;
+  UPDATE_ALL;
+  SHOW_ALL;
+  sleep = 100;
+}
+```
+
+`COUNT_ALL`, `UPDATE_ALL`, `SHOW_ALL` will both just call `COUNT` and `UPDATE` over all the cells: 
+
+```
+COUNT_ALL : {
+  x = 0;
+  while (x < n) {
+    y = 0;
+    while (y < n) {
+      COUNT;
+      y++;
+    }
+    x++;
+  }
+}
+```
+
+```
+UPDATE_ALL : {
+  x = 0;
+  while (x < n) {
+    y = 0;
+    while (y < n) {
+      UPDATE;
+      y++;
+    }
+    x++;
+  }
+}
+```
+
+```
+SHOW_ALL : {
+  put = 10; put = 10; put = 10; put = 10; put = 10; put = 10; put = 10; put = 10; put = 10; put = 10; \ clear \
+  x = 0;
+  while (x < n) {
+    y = 0;
+    while (y < n) {
+      SHOW;
+      y++;
+    }
+    x++;
+    put = 10; \ add newline \
+  }
+}
+```
+
+`COUNT` will simply loop over all the neighbors. Here, we don't use a loop. 
+
+```
+COUNT : {
+  count @x @y = 0;
+  count @x @y += grid @(x+1) @(y+1);
+  count @x @y += grid @( x ) @(y+1);
+  count @x @y += grid @(x-1) @(y+1);
+  count @x @y += grid @(x+1) @( y );
+  count @x @y += grid @(x-1) @( y );
+  count @x @y += grid @(x+1) @(y-1);
+  count @x @y += grid @( x ) @(y-1);
+  count @x @y += grid @(x-1) @(y-1);
+}
+```
+
+`UPDATE` will update the corresponding cell. 
+
+> 1. Any live cell with fewer than two live neighbours dies, as if by underpopulation.
+> 2. Any live cell with two or three live neighbours lives on to the next generation.
+> 3. Any live cell with more than three live neighbours dies, as if by overpopulation.
+> 4. Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
+
+We can summarize these rules to be that cells are live iff three neighbors are alive or two neighbors are alive and it is originally alive. 
+This is the boolean expression `count @x @y == 3 || count @x @y == 2 && grid @x @y`. 
+
+```
+UPDATE : grid @x @y = count @x @y == 3 || count @x @y == 2 && grid @x @y; 
+```
+
+Finally, the `SHOW` procedure puts `#` if `grid @x @y` is active and `.` otherwise. 
+
+```
+SHOW : put = grid @x @y ? '#' : '.'; 
+```
+
+Our full code is: 
+
+```
+INITIALIZE : {
+  n = read;
+  x = 0;
+  while (x < n) {
+    y = 0;
+    while (y < n) {
+      grid @x @y = random; 
+      y++;
+    }
+    x++;
+  }
+}
+
+COUNT : {
+  count @x @y = 0;
+  count @x @y += grid @(x+1) @(y+1);
+  count @x @y += grid @( x ) @(y+1);
+  count @x @y += grid @(x-1) @(y+1);
+  count @x @y += grid @(x+1) @( y );
+  count @x @y += grid @(x-1) @( y );
+  count @x @y += grid @(x+1) @(y-1);
+  count @x @y += grid @( x ) @(y-1);
+  count @x @y += grid @(x-1) @(y-1);
+}
+
+COUNT_ALL : {
+  x = 0;
+  while (x < n) {
+    y = 0;
+    while (y < n) {
+      COUNT;
+      y++;
+    }
+    x++;
+  }
+}
+
+UPDATE : grid @x @y = count @x @y == 3 || count @x @y == 2 && grid @x @y; 
+
+UPDATE_ALL : {
+  x = 0;
+  while (x < n) {
+    y = 0;
+    while (y < n) {
+      UPDATE;
+      y++;
+    }
+    x++;
+  }
+}
+
+SHOW : put = grid @x @y ? '#' : '.'; 
+
+SHOW_ALL : {
+  put = 10; put = 10; put = 10; put = 10; put = 10; put = 10; put = 10; put = 10; put = 10; put = 10; \ clear \
+  x = 0;
+  while (x < n) {
+    y = 0;
+    while (y < n) {
+      SHOW;
+      y++;
+    }
+    x++;
+    put = 10; \ add newline \
+  }
+}
+
+ADVANCE : {
+  COUNT_ALL;
+  UPDATE_ALL;
+  SHOW_ALL;
+}
+
+MAIN : {
+  INITIALIZE; 
+  while (1) ADVANCE;
+}
+```
+
+If the `random` extension is not available, one can exchange `random` for `(x % 3 * y + x + 3 * y % 7) % 2;` and get quite similar results. 
+
+
+
 
 
