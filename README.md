@@ -602,7 +602,7 @@ ADVANCE : {
 }
 ```
 
-`COUNT_ALL`, `UPDATE_ALL`, `SHOW_ALL` will both just call `COUNT` and `UPDATE` over all the cells: 
+`COUNT_ALL`, `UPDATE_ALL`, `SHOW_ALL` will both just call `COUNT`, `UPDATE`, and `SHOW` over all the cells: 
 
 ```
 COUNT_ALL : {
