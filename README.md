@@ -38,6 +38,13 @@ for instance `var`, `myvar`, `my_var`, `_var_`, `_`, etc.
 Variables have no types in _mandrill++_. They can hold integers, characters, and booleans, but they are all represented
 internally with integers by using their value, Unicode value, and 0 and 1. 
 
+```
+a = 2 > 0;
+b = 3 - 2;
+c = 'b' - 97;
+```
+set `a`, `b`, and `c` to 1. 
+
 Variables are all global and not scoped. 
 
 Variables do not need to be declared and are automatically initialized to 0. For instance, `a = a + 1; ` sets `a` to 1
@@ -249,6 +256,9 @@ It is customary to add a space before `++` or `--` if what precedes it is a refe
 
 We usually add spaces before reference symbols, but never after them.  
 
+Usually, only one statement is present per line. The exceptions are `put = 32; ` and `put = 10; ` to print either a space or a newline. 
+These statements can follow an assignment to `write` or `put` directly. 
+
 ### Comments
 
 Comments can serve three purposes: 
@@ -291,5 +301,137 @@ However, this is not an obligation, especially if it is inconvenient to indent c
 
 ### Variable Names
 
-Variable names should usually be words ...
+Variable names should usually be words, and may be many words concatenated with underscores. 
+For instance, `age`, `time`, and `row_number` are great variable names. 
+
+To avoid name collision with keywords or predefined variables, append an underscore at the end. 
+For instance, `write_` and `age_` are acceptable. One common use case for this naming convention is
+the change of one variable. For instance, in a fibonacci program, we can have
+
+```
+current = 1;
+next = 1;
+while (current < 1000) {
+  write = current; put = 32; 
+  current_ = next;
+  next_ = current + next;
+  current = current_;
+  next = next_; 
+}
+put = 10; 
+```
+
+which outputs
+
+```
+1 1 2 3 5 8 13 21 34 55 89 144 233 377 610 987 
+```
+
+A single underscore is sometimes used as a temporary variable, for instance in the snippet:
+
+```
+_ = a;
+a = b;
+b = _; 
+```
+
+Some common variable concepts like `time`, `row`, `column`, `change`, `stack`, `queue`, etc. 
+can use shorter variable names like `t`, `r`, `c`, `d`, `s`, `q`, etc. Abstract concepts like
+`x`, `y`, and `z` also warrant this use. 
+
+### Procedures
+
+Each procedure should not contain more than 10 statements. Avoid writing long code without splitting it into procedures. 
+
+For instance, we can solve Problem 25 of the Guts Estimation Round of the Berkeley Math Competition 2021, which asks for `a` if
+`2021^2021 / 2021!` can be expressed as `x1 x2 x3 ... xl . xl+1 xl+2 ... xa y1 y2 ... yb y1 y2 ... yb ...`, that is, the number of
+digits not in the repeating decimal places. 
+
+To solve this, we use mathematics for the digits after the decimal point, counting the number of factors of 2 in 2021!. 
+We use brute force for the digits before the decimal point by simply calculating the value. 
+
+Without procedures, the code is: 
+
+```
+power = 1;
+i = 1;
+while (i <= 2021) {
+  power *= 2021;
+  i++;
+}
+factorial = 1; 
+i = 1; 
+while (i <= 2021) {
+  factorial *= i; 
+  i++; 
+}
+front_digits = 0; 
+quotient = power / factorial;
+while (quotient) {
+  quotient /= 10; 
+  front_digits++; 
+}
+back_digits = 0;
+number = 2021;
+while (number) {
+  number /= 2;
+  back_digits += number;
+}
+write = front_digits + back_digits; put = 10; 
+```
+
+Notice how there are clearly four sections of our code: calculating the power, calculating the factorial, 
+finding the number of digits in front of the decimal point, and finding the number of digits after the decimal point. 
+Therefore, we can reformat our code: 
+
+```
+POWER : {
+  power = 1;
+  i = 1;
+  while (i <= 2021) {
+    power *= 2021;
+    i++;
+  }
+}
+
+FACTORIAL : {
+  factorial = 1; 
+  i = 1; 
+  while (i <= 2021) {
+    factorial *= i; 
+    i++; 
+  }
+}
+
+FRONT_DIGITS : {
+  front_digits = 0; 
+  quotient = power / factorial;
+  while (quotient) {
+    quotient /= 10; 
+    front_digits++; 
+  }
+}
+
+BACK_DIGITS : {
+  back_digits = 0;
+  number = 2021;
+  while (number) {
+    number /= 2;
+    back_digits += number;
+  }
+}
+
+MAIN : {
+  POWER; 
+  FACTORIAL;
+  FRONT_DIGITS;
+  BACK_DIGITS;
+  write = front_digits + back_digits; put = 10; 
+}
+```
+
+## Examples
+
+
+
 
