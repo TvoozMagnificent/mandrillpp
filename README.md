@@ -432,6 +432,76 @@ MAIN : {
 
 ## Examples
 
+### Guts Round Estimation. 
 
+We can try to similarly solve Question 27, which asks for the difference between the number of even digits and odd digits
+across the numbers from `2^0` to `2^2021`. Here, we use a top-down approach, first sketching out our `MAIN` procedure and then
+filling in the details. 
+
+```
+MAIN : {
+  number = 1; 
+  while (count < 2022) {
+    SOLVE; 
+    number *= 2; 
+    count++; 
+  }
+  write = even - odd; 
+}
+```
+
+We now implement the `SOLVE` procedure: 
+
+```
+SOLVE : {
+  \ `RECORD` each digit in `number` \
+  copy = number; 
+  while (copy) {
+    digit = copy % 10; 
+    RECORD; 
+    copy /= 10; 
+  }
+}
+```
+
+and the `RECORD` procedure:
+
+```
+RECORD : {
+  \ update `even` and `odd` according to `digit`. \
+  if (digit % 2 == 0) even++; 
+  else odd++; 
+}
+```
+
+We can test our implementation by calculating up to `2^4`, which should have the digits `124816`, so the difference is 2. 
+Now we crank this up to `2^2021`, and get 1776, the correct answer. Notably, our interpreter will struggle with this and the code
+will take quite a while (around 11 seconds). 
+
+It is possible to optimize this approach, storing only the difference, etc. 
+
+```
+SOLVE : {
+  copy = number; 
+  while (copy) {
+    difference += 1 - copy % 2 * 2; 
+    copy /= 10; 
+  }
+}
+
+MAIN : {
+  number = 1; 
+  while (count < 2022) {
+    SOLVE; 
+    number *= 2; 
+    count++; 
+  }
+  write = difference; put = 10; 
+}
+```
+
+This version only takes around 7 seconds to run, but it sacrifices readability. 
+
+### A (much) more complex problem. 
 
 
