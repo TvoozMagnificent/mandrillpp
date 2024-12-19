@@ -1032,7 +1032,3 @@ tape.4: 10
 ```
 
 (Omitting all the `program.xxx` entries.) 
-
-
-
-
