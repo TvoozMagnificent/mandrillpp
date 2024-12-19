@@ -911,7 +911,7 @@ we are running) and `pointer` for the pointer on our `tape`.
 ```
 RUN : {
   while (counter < length) {
-    if (program @counter == '+') tape @pointer ++; 
+    if (program @counter == '+') tape @pointer ++; \ use { tape @pointer ++; tape @pointer %= 256; } for 8-bit wrapping memory \
     if (program @counter == '-') tape @pointer --; 
     if (program @counter == '>') pointer++; 
     if (program @counter == '<') pointer--;
