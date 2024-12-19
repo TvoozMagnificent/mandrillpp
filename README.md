@@ -555,6 +555,8 @@ CHECK_SQUARE : {
 }
 ```
 
+Notice how we conventionally use the variable `return` for return values of procedures. 
+
 The output is `359036568873322`, so our answer is `0.359036568873322`. This agrees with the answer given by the problem-setters. 
 
 In our implementation, we use array references to get the job done. Of course, it is possible to evade them - 
@@ -563,7 +565,7 @@ that is left as an exercise to the reader.
 ### Conway's Game of Life
 
 To implement Conway's Game of Life, we introduce a new special variable: `random`. Evaluating `random` gives
-either 0 or 1 with 1/2 chance/  
+either 0 or 1 with 1/2 chance. 
 
 Our `MAIN` procedure is now mostly a sketch: 
 
@@ -591,14 +593,13 @@ INITIALIZE : {
 }
 ```
 
-Our `ADVANCE` procedure will have 4 steps: 
+Our `ADVANCE` procedure will have 3 steps: 
 
 ```
 ADVANCE : {
   COUNT_ALL;
   UPDATE_ALL;
   SHOW_ALL;
-  sleep = 100;
 }
 ```
 
@@ -768,6 +769,269 @@ MAIN : {
 
 If the `random` extension is not available, one can exchange `random` for `(x % 3 * y + x + 3 * y % 7) % 2;` and get quite similar results. 
 
+### Proof of Turing Completeness: the brainfuck program
+
+We can implement brainfuck in our language. Following common brainfuck convention, we read the program until we encounter a `!`, 
+which delimits the brainfuck program from the input to the program. 
+
+In `MAIN`, we'll call `INITIALIZE` and `RUN`. 
+
+```
+MAIN : {
+  INITIALIZE;
+  RUN;
+}
+```
+
+`INITIALIZE` will `READ` the program and `PAIR` all the brackets. 
+
+```
+INITIALIZE : {
+  READ;
+  PAIR;
+}
+```
+
+`READ` is simple: 
+
+```
+READ : {
+  index = 0;
+  flag = 1; \ indicates whether a '!' is met \
+  while (flag) {
+    next = get;
+    program @index = next;
+    if (next == '!') flag = 0; \ break from loop \
+    index++; 
+  }
+  length = index - 1; \ `length` will store length of program \
+}
+```
+
+If we enable debug mode and set `PAIR : {}` and `RUN : {}`, we can verify that our program is working with the input `abcde!abcde`:
+
+```
+index: 6
+flag: 0
+next: 33
+program.0: 97
+program.1: 98
+program.2: 99
+program.3: 100
+program.4: 101
+program.5: 33
+length: 5
+```
+
+Now let us write `PAIR`, which will require a queue. 
+
+```
+PAIR : {
+  index = 0;
+  while (index < length) {
+    if (program @index == '[') HEAP_PUSH;
+    if (program @index == ']') {
+      HEAP_POP;
+      reference @index = return;
+      reference @return = index;
+    }
+    index++; 
+  }
+}
+```
+
+The logic of this module is actually quite simple: we push `[` into the stack, and pop them when we have a `]` to match. 
+Now we have to implement `HEAP_PUSH` and `HEAP_POP`. 
+
+```
+HEAP_PUSH : {
+  \ push onto `heap` with size `size` \
+  heap @size = index; 
+  size++; 
+}
+```
+
+```
+HEAP_POP : {
+  \ pop from `heap` with size `size` \
+  size--;
+  return = heap @size;
+}
+```
+
+Notice how `HEAP_POP` doesn't actually erase anything from `heap`. These values are simply told to be removed
+via the decrement of `size` and can be overwritten. 
+
+We can test this on the input `[[][]][]!`. 
+
+```
+INDEX 0 1 2 3 4 5 6 7 8
+CHAR  [ [ ] [ ] ] [ ] !
+```
+
+It is clear that `reference` should be: 
+
+```
+INDEX 0 1 2 3 4 5 6 7
+REF   5 2 1 4 3 0 7 6
+```
+
+Running our program in debug mode gives:
+
+```
+...
+reference.2: 1
+reference.1: 2
+reference.4: 3
+reference.3: 4
+reference.5: 0
+reference.0: 5
+reference.7: 6
+reference.6: 7
+```
+
+Since we don't assign to `reference` in index order, the variables aren't created in that order. Reordering gives:
+
+```
+reference.0: 5
+reference.1: 2
+reference.2: 1
+reference.3: 4
+reference.4: 3
+reference.5: 0
+reference.6: 7
+reference.7: 6
+```
+
+This is what we expect. 
+
+Now we go on to implement `RUN`. We'll use `counter` for our program counter (indexing the character of the program
+we are running) and `pointer` for the pointer on our `tape`. 
+
+```
+RUN : {
+  while (counter < length) {
+    if (program @counter == '+') tape @pointer ++; 
+    if (program @counter == '-') tape @pointer --; 
+    if (program @counter == '>') pointer++; 
+    if (program @counter == '<') pointer--;
+    if (program @counter == ',') tape @pointer = get;
+    if (program @counter == '.') put = tape @pointer;
+    counter++; 
+  }
+}
+```
+
+The cases for `[` and `]` are a little more complex and we'll leave them for later. 
+To test this, we'll use the input: `,+.>++++++++++.!a`. We should expect the output to be `b`. 
+We also should have `pointer = 1`, `tape @0 = 98`, and `tape @1 = 10`. 
+
+```
+b
+index: 15
+flag: 0
+next: 33
+program.0: 44
+...
+program.15: 33
+length: 15
+tape.0: 98
+counter: 15
+pointer: 1
+tape.1: 10
+```
+
+This is in accordance with our expectations. 
+
+To implement `[` and `]`, recognize that `[` will set `pointer` to `reference @pointer` if the current cell is zero, 
+and `]` will set `pointer` to `reference @pointer` if the current cell is non-zero. 
+
+For instance, with the program `+++[-]!`, the states will be: 
+
+```
++ + + [ - ]  tape @0 = 1
+^
+
++ + + [ - ]  tape @0 = 2
+  ^
+
++ + + [ - ]  tape @0 = 3
+    ^
+
++ + + [ - ]  tape @0 = 3, continue
+      ^
+
++ + + [ - ]  tape @0 = 2
+        ^
+
++ + + [ - ]  tape @0 = 2, go back
+          ^
+
++ + + [ - ]  tape @0 = 1
+        ^
+
++ + + [ - ]  tape @0 = 1, go back
+          ^
+
++ + + [ - ]  tape @0 = 0
+        ^
+
++ + + [ - ]  tape @0 = 0, continue
+          ^
+
++ + + [ - ]  tape @0 = 0, halt
+            ^
+```
+
+We can now implement the rest of `RUN`: 
+
+```
+RUN : {
+  while (counter < length) {
+    if (program @counter == '+') tape @pointer ++; 
+    if (program @counter == '-') tape @pointer --; 
+    if (program @counter == '>') pointer++; 
+    if (program @counter == '<') pointer--;
+    if (program @counter == '[') counter = tape @pointer ? counter : reference @counter; 
+    if (program @counter == ']') counter = tape @pointer ? reference @counter : counter; 
+    if (program @counter == ',') tape @pointer = get;
+    if (program @counter == '.') put = tape @pointer;
+    counter++; 
+  }
+}
+```
+
+We can now test it on `+++[-]!`, and see that `tape.0` is indeed now `0`. 
+
+Now, we can test it on the famous Hello World program: 
+
+```
+++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.!
+```
+
+Which works beautifully: 
+
+```
+Hello World!
+index: 111
+flag: 0
+next: 33
+length: 111
+heap.0: 10
+size: 0
+return: 10
+reference.41: 10
+reference.10: 41
+tape.0: 0
+counter: 111
+pointer: 4
+tape.1: 87
+tape.2: 100
+tape.3: 33
+tape.4: 10
+```
+
+(Omitting all the `program.xxx` entries.) 
 
 
 
