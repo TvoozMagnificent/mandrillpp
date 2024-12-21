@@ -19,7 +19,7 @@ will execute `program.man` as a _mandrill++_ file.
 The changes in _mandrill++_ as compared to _mandrill_ are:
 - Allowing the use of underscores is variable names.
 - Adding syntactic sugar like `+=` and `++` that makes writing programs less painful.
-- Adding the boolean operators and the ternary operator.
+- Adding the unary subtraction operator, boolean operators, and the ternary operator.
 - Depreciating ambiguous grammar associated with chained comparison operators.
 - Allowing some syntactic simplifications in `if` and `while` constructs.
 - Adding array references.
@@ -86,7 +86,7 @@ with a newline at the end.
 
 ### Operations
 
-_mandrill++_ supports basic arithmetic operators, comparisons, boolean operators, and the ternary operator, in decreasing order of operation. 
+_mandrill++_ supports basic arithmetic operators, unary subtraction, comparisons, boolean operators, and the ternary operator, in decreasing order of operation. 
 
 The basic binary arithmetic operators are:
 - `+` for addition,
@@ -96,7 +96,7 @@ The basic binary arithmetic operators are:
 - `%` for integer modulo.
 
 The implementations of these operators use the inbuilt Python operators `+`, `-`, `*`, `//` (not `/`), and `%`. 
-Notably, the unary operators `+` and `-`, the exponentiation operator `**`, and the bitwise operators are not supported. 
+Notably, the unary operator `+`, the exponentiation operator `**`, and the bitwise operators are not supported. 
 The order of operations are standard. 
 
 The comparison operators are `<`, `>`, `<=`, `>=`, `==`, `!=`, implemented using inbuilt Python operators. These operators
@@ -179,8 +179,10 @@ Procedures must be defined on previous procedures. `A : A; ` and `A : B; ` are n
 An extreme case is this: 
 
 ```
-a++;
-b++;
+MAIN : {
+  a++;
+  b++;
+}
 
 A : {
   MAIN;
@@ -210,7 +212,7 @@ Arrays have infinite length. Internally, `var @3` is represented by the variable
 We also support multi-dimensional array references. For instance, if we have `a = 1; b = 2; `, then `x @a @3 @b @(a+b)` would reference
 the variable `x.1.3.2.3`. `read`, `write`, `get`, and `put` can be used as array references. 
 
-Variable names, if needed, are calculated after the expression on the right is evaluated. For instance, when executing
+Variable names, if needed, are calculated before the expression on the right is evaluated. For instance, when executing
 
 ```
 read @read @read = read @read;
@@ -219,7 +221,7 @@ read @read @read = read @read;
 where the input stream is `1 2 3 4 5`, 
 
 ```
-read @2 @3 = read @1; 
+read @1 @2 = read @3; 
 ```
 
 is executed. Another example is that `a @read ++; ` will execute `a @2 = a @1 + 1; ` if the input stream is `1 2 3 4 5`. 
