@@ -283,7 +283,7 @@ MAIN : {
 
 Notice how the number of backslashes in both lines are odd. 
 
-When commenting, we simply use `/ comment yada yada /`, putting spaces on both sides. 
+When commenting, we simply use `\ comment yada yada \`, putting spaces on both sides. 
 These comments can come after a line, explaining what the line does, or can come before a line,
 explaining what the following lines (not line) do. 
 
@@ -1034,3 +1034,496 @@ tape.4: 10
 ```
 
 (Omitting all the `program.xxx` entries.) 
+
+## Maze BFS
+
+For a maze BFS, we’ll first read in the maze. Suppose that the maze is $N\times M$, and the start of the maze is at $(0, 0)$ and the end of the maze is at $(N-1,M-1)$. The input would be two integers $N$ and $M$, follows by the maze, which is $N$ lines of $M$ characters each. 
+
+The `MAIN` sketch is as follows: 
+
+```
+MAIN : {
+  INITIALIZE; 
+  while (!error && !found) PROCESS;
+  if (found) SHOW; 
+}
+```
+
+Here, `error` will be raised if all the nodes have been explored and there is no path, and `found` will be true if a solution has been found. 
+
+Let’s start by sketching the `INITIALIZE` function. We first have to read in the maze, which is straightforward enough: 
+
+```
+READ : {
+  n = read; 
+  m = read;
+  x = 0;
+  while (x < n) {
+    y = 0;
+    while (y < m) {
+      maze @x @y = get;
+      available @x @y = maze @x @y == '.'; 
+      y++;
+    }
+    x++;
+  }
+}
+```
+
+Let’s try inputting: 
+
+```
+10 10
+...#.#.#.#
+....#.....
+.....##..#
+....#..##.
+..#.##.#..
+...#....##
+#.#.......
+........#.
+.#.....#..
+...#......
+```
+
+and see the debug information. (We’ll let `INITIALIZE : READ;`, `PROCESS : ERROR;`, and `SHOW : ERROR;`.) 
+
+```
+{
+    'n': 10,
+    'm': 10,
+    'x': 10,
+    'y': 10,
+    'maze.0.0': 46,
+    'available.0.0': 1,
+    'maze.0.1': 46,
+    'available.0.1': 1,
+    'maze.0.2': 46,
+    'available.0.2': 1,
+    'maze.0.3': 35,
+    'available.0.3': 0,
+    'maze.0.4': 46,
+    'available.0.4': 1,
+    'maze.0.5': 35,
+    'available.0.5': 0,
+    'maze.0.6': 46,
+    'available.0.6': 1,
+    'maze.0.7': 35,
+    'available.0.7': 0,
+    ...
+    'maze.9.7': 46,
+    'available.9.7': 1,
+    'maze.9.8': 46,
+    'available.9.8': 1,
+    'maze.9.9': 46,
+    'available.9.9': 1,
+    'error': 1
+}
+
+```
+
+This is as we expected. Now, we can complete `INITIALIZE`. 
+
+We’ll use a queue for our BFS since we don’t have recursion: 
+
+```
+PUSH : {
+  \ push `next` into `queue` from `start` to `end` \
+  queue @end @'x' = next @'x'; 
+  queue @end @'y' = next @'y';
+  end++; 
+}
+```
+
+```
+POP : {
+  \ pop from `queue` from `start` to `end` to `return` \
+  if ( start == end ) ERROR; 
+  return @'x' = queue @start @'x';
+  return @'y' = queue @start @'y';
+  start++;
+}
+```
+
+Where we’ll have `ERROR` as: 
+
+```
+ERROR : {
+  \ print error message and set `error` \
+  put = 'E'; 
+  put = 'R'; 
+  put = 'R'; 
+  put = 'O'; 
+  put = 'R'; 
+  put = 10; \ newline \
+  error = 1; 
+}
+```
+
+The way our queue works is different from most other language’s implementations. In many other languages, queues are made from linked lists. 
+
+![image.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/07e772ed-f8c7-45d7-b953-e61360018aca/7aca3594-3412-499d-8ef7-0a5955d8aae5/image.png)
+
+In a standard linked list like shown above, we have a reference of the first node, which has a reference to the next node, etc. We also have a reference to the last node, which next reference is `null`. When popping, we simply return the value of the first node, and update the `first` reference. Similarly, when pushing, we simply reference a new node from what is initially our last node and update the `last` reference. 
+
+However, here, we simply use an infinitely long array (the inbuilt for *mandrill++* references). 
+
+![image.png](https://prod-files-secure.s3.us-west-2.amazonaws.com/07e772ed-f8c7-45d7-b953-e61360018aca/10a82f91-2d90-409e-adc8-0dbd8c4902c2/image.png)
+
+To pop, we simply increment `start`, and to push, we simply increment `end`! This is much easier (although not quite as practical in some other languages). 
+
+`INITIALIZE` will be: 
+
+```
+INITIALIZE : {
+  READ; 
+  next @'x' = 0;
+  next @'y' = 0;
+  PUSH;
+  available @0 @0 = 0; 
+}
+```
+
+To avoid cluttering up stuff, let’s test the program on the (much simpler) maze:
+
+```
+2 2
+..
+#.
+```
+
+```
+{
+    'n': 2,
+    'm': 2,
+    'x': 2,
+    'y': 2,
+    'maze.0.0': 46,
+    'available.0.0': 0,
+    'maze.0.1': 46,
+    'available.0.1': 1,
+    'maze.1.0': 35,
+    'available.1.0': 0,
+    'maze.1.1': 46,
+    'available.1.1': 1,
+    'next.120': 0,
+    'next.121': 0,
+    'queue.0.120': 0,
+    'queue.0.121': 0,
+    'end': 1,
+    'error': 1
+}
+```
+
+As we expected. 
+
+Now, let us implement `PROCESS`. We’ll `POP` from the queue, get all of its neighbors, and `REGISTER` them. 
+
+```
+PROCESS : {
+  POP; 
+  found = return @'x' + 1 == n && return @'y' + 1 == m;
+  if (!error && !found) {
+    next @'x' = return @'x';
+    next @'y' = return @'y' + 1;
+    REGISTER; 
+    next @'y' = return @'y' - 1;
+    REGISTER; 
+    next @'y' = return @'y';
+    next @'x' = return @'x' + 1;
+    REGISTER; 
+    next @'x' = return @'x' - 1;
+    REGISTER; 
+  }
+}
+```
+
+Setting `REGISTER` to error as well and debugging, you will see that `found` does get set when the maze is 1 by 1, which is a good sign. (It still errors since `SHOW` is error.) 
+
+The logic of `REGISTER` is easy enough: 
+
+```
+REGISTER : {
+  x = next @'x'; 
+  y = next @'y';
+  if (available @x @y) {
+    available @x @y = 0;
+    parent @x @y @'x' = return @'x'; 
+    parent @x @y @'y' = return @'y'; 
+    PUSH; 
+  }
+}
+```
+
+Now, our debug information is: 
+
+```
+{
+    'n': 2,
+    'm': 2,
+    'x': -1,
+    'y': 1,
+    'maze.0.0': 46,
+    'available.0.0': 0,
+    'maze.0.1': 46,
+    'available.0.1': 0,
+    'maze.1.0': 35,
+    'available.1.0': 0,
+    'maze.1.1': 46,
+    'available.1.1': 0,
+    'next.120': -1,
+    'next.121': 1,
+    'queue.0.120': 0,
+    'queue.0.121': 0,
+    'end': 3,
+    'return.120': 1,
+    'return.121': 1,
+    'start': 3,
+    'parent.0.1.120': 0,
+    'parent.0.1.121': 0,
+    'queue.1.120': 0,
+    'queue.1.121': 1,
+    'parent.1.1.120': 0,
+    'parent.1.1.121': 1,
+    'queue.2.120': 1,
+    'queue.2.121': 1,
+    'found': 1,
+    'error': 1
+}
+```
+
+Which does solve the maze. 
+
+This leaves `SHOW`: 
+
+```
+SHOW : {
+  x = n - 1;
+  y = m - 1;
+  maze @x @y = 'x';
+  while (x || y) {
+    x_ = parent @x @y @'x'; 
+    y_ = parent @x @y @'y';
+    x = x_;
+    y = y_;
+    maze @x @y = 'x';
+  }
+  PRINT; 
+}
+```
+
+```
+PRINT : {
+  x = 0;
+  while (x < n) {
+    y = 0;
+    while (y < m) {
+      put = maze @x @y;
+      y++;
+    }
+    put = 10;
+    x++;
+  }
+}
+```
+
+Now let’s try this again:
+
+```
+10 10
+...#.#.#.#
+....#.....
+.....##..#
+....#..##.
+..#.##.#..
+...#....##
+#.#.......
+........#.
+.#.....#..
+...#......
+```
+
+```
+xx.#.#.#.#
+.x..#.....
+.x...##..#
+.x..#..##.
+.x#.##.#..
+.x.#....##
+#x#.......
+.xxxxxx.#.
+.#....x#..
+...#..xxxx
+```
+
+Nice! Now let’s try a $60\times60$: 
+
+```
+60 60
+..##..#..#.#..#...................#..............##.#.#.##..
+...#.......#...#..##..#........#.....##...#...#.........#...
+#....###.#...#.#.......##..#..............##..#....#.##..#..
+........##.#.#..#.........##...#.###..#.##..#..#..#.#..#....
+...#.#....#......#......#................#......#.#....#.#..
+#.#.......##.#.....#....#..#....#...........##...#..........
+......#..#....#.....#....#.......#...#...#....#..#....#.....
+#...#...#..#.#........#...#...........#..#.##.....#.#.....#.
+..###.......#..##.#....#......#...#....#.#.#...........#....
+...........#.#.#.#.....#..............#.....##........#.....
+#..#...##..........#..#......#.#......#.#.......#...##......
+#.....#......#.##.#..#.....#..#..#......#..........#........
+...#.#.......#......#...##..#..#...##....#.##..........#.##.
+#......#..##....#.#.#.......................#...##...#......
+..#.#.#..#........#........##.##...............#.#......#...
+..#.#........#....##.............#.#....#......#...#........
+..#......#...#..#..##..........###........#....#........#...
+.........##.##..#.....#...#....#......#........###......#...
+.....##..#.....#.....#..#.##......#.###..####....#.##..#.#..
+..##...#.........#.#.....##.......#.......#.##.......#.#...#
+........#....####..........##..##.#.......#.......#...#...##
+.#...#....##....#..........#.....##..#...................#.#
+.#..#.##..#.....#................###........#.####..........
+#..........#.#..#...#.#..#..#...##..#..................##...
+........###.#......#........##.#....#..#..#....#...##.......
+.......##.#.......#.....#......##........#.#....#.....##....
+.#......#....##..##.......................##.....#.##......#
+...#.....#..#...#...#.#.#.####.##...#.#.......#.#..........#
+.#....#........###....#...#..##.#.........#.......#.....#.#.
+..#.......#.#.#..###........#.#......#..#.#.........##.....#
+#.............##...#.#....#..#.....#....#...#.##..#..#.#.#.#
+.#.........#.#.....##.#.....###...#..#.#.#...#.....#....####
+......#....#..#...#...#.........#...#...#....#......#.......
+............##.....##..#.#..#.....#.....................##..
+......#.#...#..#....#..#......#...#...#.......#..#........#.
+.....#.....#..##.#........#.........#.#.#..###.........#.#..
+.#...#.##..##....#......##..##...#.....#.#.#...##...#..#....
+..........#...#.......#.....#........#........#...........#.
+.....#..#.#....###..#....#.#...#....#.........#....###......
+..#.####..#.........#........#....#.....#.......#..#....#...
+#.#....##..#..#...#...#..#..#......#..#.#....#...#...#..#..#
+..#.........#.#..............#..##..##.....#.....#....#.....
+.#...#....#.#.........#...#......#......##.##.#.#...........
+..........#.#............##..............#.##...##.##.....#.
+.........##.#....###.##...#..##..............#...#....#....#
+.#.........#.#.#....##....#............#.#..#........#..#...
+.#.......##.....#....#.#..#.#.#...#.#..###.##...#.##...#..##
+.#.......#......##..#..##........##..#.##..#.........##..#..
+..#..##..........##.............#........#.#......#....#.#..
+..##............#.#..............##.......##..#......#..##..
+..........#.............#...#..#.##...........#..##.....##..
+............#....#...#..#.........##.....#.##.....#........#
+#..#.#.........##............#....#.....##..#........#.#....
+..###...#...#.##.#..##.#......#..#..#...#.....#.....#.....##
+##.#..#....#.............#..#....#..#......##....#..#..##...
+..#..#....##....#...##.....#.......#...##.......##.#.#......
+...#...#.........#....##.#.#........#.....#..##...#....#.#..
+......#...#.#...#.....#........##.#......##..#....##..#.....
+........#.##....#..#.........#...#..#....#.#.....#...#....#.
+###.#.#.#.##....##....#.....##.#...##......#...........#....
+```
+
+```
+xx##..#..#.#..#...................#..............##.#.#.##..
+.xx#.......#...#..##..#........#.....##...#...#.........#...
+#.xxx###.#...#.#.......##..#..............##..#....#.##..#..
+....xxxx##.#.#..#.........##...#.###..#.##..#..#..#.#..#....
+...#.#.x..#......#......#................#......#.#....#.#..
+#.#....x..##.#.....#....#..#....#...........##...#..........
+......#x.#....#.....#....#.......#...#...#....#..#....#.....
+#...#..x#..#.#........#...#...........#..#.##.....#.#.....#.
+..###..xxxx.#..##.#....#......#...#....#.#.#...........#....
+..........x#.#.#.#.....#..............#.....##........#.....
+#..#...##.xxxxxxxx.#..#......#.#......#.#.......#...##......
+#.....#......#.##x#..#.....#..#..#......#..........#........
+...#.#.......#...xxx#...##..#..#...##....#.##..........#.##.
+#......#..##....#.#x#.......................#...##...#......
+..#.#.#..#........#xxxxxxxx##.##...............#.#......#...
+..#.#........#....##......xxxxx..#.#....#......#...#........
+..#......#...#..#..##.........x###........#....#........#...
+.........##.##..#.....#...#...x#......#........###......#...
+.....##..#.....#.....#..#.##..x...#.###..####....#.##..#.#..
+..##...#.........#.#.....##...x...#.......#.##.......#.#...#
+........#....####..........##.x##.#.......#.......#...#...##
+.#...#....##....#..........#..x..##..#...................#.#
+.#..#.##..#.....#.............x..###........#.####..........
+#..........#.#..#...#.#..#..#.x.##..#..................##...
+........###.#......#........##x#....#..#..#....#...##.......
+.......##.#.......#.....#.....x##........#.#....#.....##....
+.#......#....##..##...........xxxxxxxxxxxx##.....#.##......#
+...#.....#..#...#...#.#.#.####.##...#.#..xxxxx#.#..........#
+.#....#........###....#...#..##.#.........#..xxxxx#.....#.#.
+..#.......#.#.#..###........#.#......#..#.#......x..##.....#
+#.............##...#.#....#..#.....#....#...#.##.x#..#.#.#.#
+.#.........#.#.....##.#.....###...#..#.#.#...#...xx#....####
+......#....#..#...#...#.........#...#...#....#....x.#.......
+............##.....##..#.#..#.....#...............x.....##..
+......#.#...#..#....#..#......#...#...#.......#..#x.......#.
+.....#.....#..##.#........#.........#.#.#..###....x....#.#..
+.#...#.##..##....#......##..##...#.....#.#.#...##.x.#..#....
+..........#...#.......#.....#........#........#...x.......#.
+.....#..#.#....###..#....#.#...#....#.........#...x###......
+..#.####..#.........#........#....#.....#.......#.x#....#...
+#.#....##..#..#...#...#..#..#......#..#.#....#...#x..#..#..#
+..#.........#.#..............#..##..##.....#.....#x...#.....
+.#...#....#.#.........#...#......#......##.##.#.#.x.........
+..........#.#............##..............#.##...##x##.....#.
+.........##.#....###.##...#..##..............#...#xxx.#....#
+.#.........#.#.#....##....#............#.#..#.......x#..#...
+.#.......##.....#....#.#..#.#.#...#.#..###.##...#.##x..#..##
+.#.......#......##..#..##........##..#.##..#........x##..#..
+..#..##..........##.............#........#.#......#.xxx#.#..
+..##............#.#..............##.......##..#......#xx##..
+..........#.............#...#..#.##...........#..##....x##..
+............#....#...#..#.........##.....#.##.....#....xxx.#
+#..#.#.........##............#....#.....##..#........#.#.x..
+..###...#...#.##.#..##.#......#..#..#...#.....#.....#....x##
+##.#..#....#.............#..#....#..#......##....#..#..##xxx
+..#..#....##....#...##.....#.......#...##.......##.#.#.....x
+...#...#.........#....##.#.#........#.....#..##...#....#.#.x
+......#...#.#...#.....#........##.#......##..#....##..#....x
+........#.##....#..#.........#...#..#....#.#.....#...#....#x
+###.#.#.#.##....##....#.....##.#...##......#...........#...x
+```
+
+Let’s time how long a $100\times100$ takes: 
+
+```
+python3.10 smain.py program.man < in > out
+1.27s user 0.03s system 99% cpu 1.301 total
+```
+
+Not bad! 
+
+Let’s upgrade to $1000\times1000$. This will be hard. 
+
+```
+116.42s user 0.70s system 99% cpu 1:57.44 total
+```
+
+Dare we try $3000$? 
+
+```
+1076.15s user 14.91s system 99% cpu 18:14.33 total
+```
+
+Yah… we’re not pushing that.
+
+# Extensions
+
+Although this language is turing complete and very versatile, there is still room for improvement on additional features that are relatively easy to implement: 
+
+- Special variable names (as in Perl) that keeps information of the program.
+- Some `true` and `false` aliases. (Variables that can be evaluated but not assigned.)
+- The ability to read in a string (i.e. detect a newline).
+- The ability to import procedures from elsewhere.
+- A standard library of useful mathematical functions such as fractions.
+- A standard library of useful data structures such as heaps.
+- A way to keep track of time.
+
+Apart from these, there are more complicated extensions that students with enough willpower may try to attempt: 
+
+- Local scope.
+- Functions, classes, and more.
+- Recursion.
+- Structs.
+- Maybe even functions as first-class citizens.
